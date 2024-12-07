@@ -5,11 +5,6 @@
 // website! https://ez-robotics.github.io/EZ-Template/
 /////
 
-void tasks() {
-	// pros::Task allianceprobing(allianceProbe);
-	// pros::Task ringsort(ringsensTask);
-}
-
 // These are out of 127
 const int DRIVE_SPEED = 127;
 const int TURN_SPEED = 90;
@@ -20,20 +15,46 @@ const int GRAB_MOGO = 55;
 // Constants
 ///
 void default_constants() {
-	chassis.pid_heading_constants_set(11, 0, 20);
-	chassis.pid_drive_constants_set(20, 0, 100);
-	chassis.pid_turn_constants_set(3, 0.05, 20, 15);
-	chassis.pid_swing_constants_set(6, 0, 65);
+  // P, I, D, and Start I
+  // https://ez-robotics.github.io/EZ-Template/tutorials/tuning_constants
+  chassis.pid_drive_constants_set(20.0, 0.0, 100.0);         // Fwd/rev constants, used for odom and non odom motions
+  chassis.pid_heading_constants_set(11.0, 0.0, 20.0);        // Holds the robot straight while going forward without odom
+  chassis.pid_turn_constants_set(3.0, 0.05, 20.0, 15.0);     // Turn in place constants
+  chassis.pid_swing_constants_set(6.0, 0.0, 65.0);           // Swing constants
+  chassis.pid_odom_angular_constants_set(6.5, 0.0, 52.5);    // Angular control for odom motions
+  chassis.pid_odom_boomerang_constants_set(5.8, 0.0, 32.5);  // Angular control for boomerang motions
 
-	chassis.pid_turn_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
-	chassis.pid_swing_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
-	chassis.pid_drive_exit_condition_set(80_ms, 1_in, 250_ms, 3_in, 500_ms, 500_ms);
+  // Exit conditions
+  // https://ez-robotics.github.io/EZ-Template/tutorials/tuning_exit_conditions
+  chassis.pid_turn_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
+  chassis.pid_swing_exit_condition_set(80_ms, 3_deg, 250_ms, 7_deg, 500_ms, 500_ms);
+  chassis.pid_drive_exit_condition_set(80_ms, 1_in, 250_ms, 3_in, 500_ms, 500_ms);
+  chassis.pid_odom_turn_exit_condition_set(90_ms, 3_deg, 250_ms, 7_deg, 500_ms, 750_ms);
+  chassis.pid_odom_drive_exit_condition_set(90_ms, 1_in, 250_ms, 3_in, 500_ms, 750_ms);
+  chassis.pid_turn_chain_constant_set(3_deg);
+  chassis.pid_swing_chain_constant_set(5_deg);
+  chassis.pid_drive_chain_constant_set(3_in);
 
-	chassis.pid_turn_chain_constant_set(3_deg);
-	chassis.pid_swing_chain_constant_set(5_deg);
-	chassis.pid_drive_chain_constant_set(3_in);
+  // Slew constants
+  // https://ez-robotics.github.io/EZ-Template/tutorials/slew_constants
+  chassis.slew_turn_constants_set(3_deg, 70);
+  chassis.slew_drive_constants_set(7_in, 70);
+  chassis.slew_swing_constants_set(3_in, 80);
 
-	chassis.slew_drive_constants_set(7_in, 80);
+  // The amount that turns are prioritized over driving in odom motions
+  // - if you have tracking wheels, you can run this higher.  1.0 is the max
+  chassis.odom_turn_bias_set(0.9);
+
+  chassis.odom_look_ahead_set(7_in);           // This is how far ahead in the path the robot looks at
+  chassis.odom_boomerang_distance_set(16_in);  // This sets the maximum distance away from target that the carrot point can be
+  chassis.odom_boomerang_dlead_set(0.625);     // This handles how aggressive the end of boomerang motions are
+
+  chassis.pid_angle_behavior_set(ez::shortest);  // Changes the default behavior for turning, this defaults it to the shortest path there
+}
+
+void testtestest() {
+  chassis.odom_pose_set({10_in, 0_in, 0_deg});
+  chassis.pid_odom_set({{{0_in, 40_in}, fwd}, {{20_in, 60_in}, fwd}});
 }
 
 void move_forward() { chassis.pid_drive_set(5_in, DRIVE_SPEED, true); }
@@ -74,13 +95,57 @@ void move_forward() { chassis.pid_drive_set(5_in, DRIVE_SPEED, true); }
   chassis.pid_drive_set(-48_in, DRIVE_SPEED, true);
 }*/
 void testautonRed() {
+	pros::Task ringsort(ringsensTask);
+	redAssign();
+	lv_obj_t *gyat = lv_obj_create(autoselector);
+	lv_obj_set_style_bg_color(gyat, lv_color_hex(0x42f548), LV_PART_MAIN);
+	lv_obj_set_size(gyat, 20, 20);
+	lv_obj_set_scrollbar_mode(gyat, LV_SCROLLBAR_MODE_OFF);
+	intake.move(-127);
+	chassis.pid_wait();
+}
+
+void testcolorsortRed() {
+	pros::Task ringsort(ringsensTask);
+	redAssign();
+	intake.move(-127);
+	chassis.pid_drive_set(60_in, 32, false);
+	chassis.pid_wait();
+	chassis.pid_turn_set(90_deg, TURN_SPEED);
+	chassis.pid_wait_quick_chain();
+	chassis.pid_drive_set(20_in, 32, false);
+	chassis.pid_wait();
+	chassis.pid_turn_set(135_deg, TURN_SPEED);
+	wallmech.move_relative(-700, -127);
 }
 
 void testautonBlue() {
+	pros::Task ringsort(ringsensTask);
+	blueAssign();
+	lv_obj_t *gyat2 = lv_obj_create(autoselector);
+	lv_obj_set_style_bg_color(gyat2, lv_color_hex(0xa442f5), LV_PART_MAIN);
+	lv_obj_set_scrollbar_mode(gyat2, LV_SCROLLBAR_MODE_OFF);
+	lv_obj_set_size(gyat2, 20, 10);
+	mogomech.set(true);
+	chassis.pid_wait();
+}
+
+void testcolorsortBlue() {
+	pros::Task ringsort(ringsensTask);
+	redAssign();
+	intake.move(-127);
+	chassis.pid_drive_set(60_in, 32, false);
+	chassis.pid_wait();
+	chassis.pid_turn_set(-90_deg, TURN_SPEED);
+	chassis.pid_wait_quick_chain();
+	chassis.pid_drive_set(20_in, 32, false);
+	chassis.pid_wait();
+	chassis.pid_turn_set(-135_deg, TURN_SPEED);
+	wallmech.move_relative(-700, -127);
 }
 
 void red_50WP() {
-	// tasks();
+	// pros::Task ringsort(ringsensTask);
 	// redAssign();
 	// Get mogo and score 2 rings
 	mogomech.set(false);
@@ -111,7 +176,7 @@ void red_50WP() {
 }
 
 void red_4ring() {
-	// tasks();
+	// pros::Task ringsort(ringsensTask);
 	// redAssign();
 	// wallmech.move_relative(-100, -127);
 	// score on allaince stake
@@ -163,7 +228,7 @@ void red_4ring() {
 }
 
 void red_4greed() {
-	// tasks();
+	// pros::Task ringsort(ringsensTask);
 	// redAssign();
 	// wallmech.move_relative(-100, -127);
 	chassis.pid_drive_set(-30_in, 60, true);
@@ -199,7 +264,7 @@ void red_4greed() {
 }
 
 void red_6ring() {
-	// tasks();
+	// pros::Task ringsort(ringsensTask);
 	// redAssign();
 	// wallmech.move_relative(-100, -127);
 	chassis.pid_drive_set(-30_in, 60, true);
@@ -289,7 +354,7 @@ void red_6ring() {
 }*/
 
 void blue_50WP() {
-	// tasks();
+	// pros::Task ringsort(ringsensTask);
 	// blueAssign();
 	// Get mogo and score 2 rings
 	mogomech.set(false);
@@ -321,7 +386,7 @@ void blue_50WP() {
 }
 
 void blue_4ring() {
-	// tasks();
+	// pros::Task ringsort(ringsensTask);
 	// blueAssign();
 	// wallmech.move_relative(-100, -127);
 	// score on allaince stake
@@ -373,7 +438,7 @@ void blue_4ring() {
 }
 
 void blue_4greed() {
-	// tasks();
+	// pros::Task ringsort(ringsensTask);
 	// blueAssign();
 	// wallmech.move_relative(-100, -127);
 	chassis.pid_drive_set(-30_in, 60, true);
@@ -408,7 +473,7 @@ void blue_4greed() {
 }
 
 void blue_6ring() {
-	// tasks();
+	// pros::Task ringsort(ringsensTask);
 	// blueAssign();
 	// wallmech.move_relative(-100, -127);
 	chassis.pid_drive_set(-30_in, 75, true);
